@@ -20,3 +20,11 @@ Usage 3:
 Usage 4:
 
 ```java -jar pixels.util-1.0.jar -Xmx512m [-Djava.awt.headless=true] --image "<image file path>" [--scale 50%] [--out "<output file path>"] [--fixFFFF]```
+
+# Build instructions
+```
+git clone https://github.com/zxfr/pixels.util.git
+cd pixels.util/
+mvn clean install
+cd bin/
+```
