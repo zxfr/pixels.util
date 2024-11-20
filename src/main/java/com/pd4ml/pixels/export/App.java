@@ -25,6 +25,8 @@ SOFTWARE.
 package com.pd4ml.pixels.export;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 
 public class App 
 {
@@ -120,8 +122,7 @@ public class App
 					System.out.println( USAGE );
 					return; 
 				}
-				p.mode = Mode.imageMode;
-				p.input = args[i];
+				p.output = args[i];
 				continue;
 			}
 			
@@ -228,6 +229,25 @@ public class App
 			break;
 		}
 		
-		System.out.println(res);
+		if (p.output != null) {
+			PrintWriter out;
+			try {
+				File f = new File(p.input);
+				String name = f.getName();
+				name = name.replace(".", "_");
+				String defstr = "PXS_" + name.toUpperCase();
+				
+				out = new PrintWriter(p.output);
+				out.println("#ifndef " + defstr);
+				out.println("#define " + defstr);
+				out.println(res);
+				out.println("#endif");
+				out.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}	
+		} else {
+			System.out.println(res);
+		}
     }
 }
