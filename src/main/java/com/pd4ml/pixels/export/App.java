@@ -52,19 +52,17 @@ public class App
 	
     public static void main( String[] args )
     {
-		char quote = File.pathSeparatorChar == '\\' ? '\"' : '\'';
-		
 		Params p = new Params();
 		
 		String USAGE = 
 		
-			"Usage 1:\njava -jar pixels.util-1.0.jar -Xmx512m [-Djava.awt.headless=true] --font "+quote+"<font file path>"+quote+" [--fontsize 18] [--for <"+quote+"Your text | #x0021-#x0024 #00048-#00057"+quote+">] [--antialiased]  [--out "+quote+"[output file path]"+quote+"]\n\n" +
+			"Usage 1:\njava -jar pixels.util-1.0.jar [-Djava.awt.headless=true] --font <font file path> [--fontsize 18] [--for <Your text | #x0021-#x0024 #00048-#00057>] [--antialiased]  [--out <output file path>]\n\n" +
 	
-			"Usage 2:\njava -jar pixels.util-1.0.jar -Xmx512m [-Djava.awt.headless=true] --icon "+quote+"<image file path>"+quote+" [--out "+quote+"[output file path]"+quote+"]\n\n" +
+			"Usage 2:\njava -jar pixels.util-1.0.jar [-Djava.awt.headless=true] --icon <image file path> [--out <output file path]>]\n\n" +
 	
-			"Usage 3:\njava -jar pixels.util-1.0.jar -Xmx512m [-Djava.awt.headless=true] --icon "+quote+"<font file path>"+quote+" --glyph <"+quote+"W"+quote+" | #x0022> [--fontsize 18] [--antialiased] [--out "+quote+"[output file path]"+quote+"]\n\n" +
+			"Usage 3:\njava -jar pixels.util-1.0.jar [-Djava.awt.headless=true] --icon <font file path> --glyph <W | #x0022> [--fontsize 18] [--antialiased] [--out <output file path>]\n\n" +
 	
-			"Usage 4:\njava -jar pixels.util-1.0.jar -Xmx512m [-Djava.awt.headless=true] --image "+quote+"<image file path?"+quote+" [--scale 50%] [--out "+quote+"[output file path]"+quote+"] [--fixFFFF]";
+			"Usage 4:\njava -jar pixels.util-1.0.jar [-Djava.awt.headless=true] --image <image file path> [--scale 50%] [--out <output file path>] [--fixFFFF]";
 		
 		for( int i = 0; i < args.length; i++ ) {
 

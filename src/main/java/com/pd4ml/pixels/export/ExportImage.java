@@ -31,7 +31,7 @@ import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferByte;
+import java.awt.image.PixelGrabber;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayOutputStream;
@@ -107,8 +107,15 @@ public class ExportImage {
 	        g.dispose();
 	    }
 
-	    // This array will be in the same R, G, B, A order
-	    byte[] data = ((DataBufferByte) raster.getDataBuffer()).getData();
+		PixelGrabber pg = new PixelGrabber(scaled, 0, 0, -1, -1, true);
+		try {
+			pg.grabPixels();
+		} catch (InterruptedException e) {
+		    e.printStackTrace();
+		    return null;
+		}
+		
+		int[] data = (int[]) pg.getPixels();
 
         result = new int[w * h];
  
@@ -127,11 +134,15 @@ public class ExportImage {
 					if ( i >= w + x - xlimit || j >= h + y - ylimit ) {
 						continue;
 					}
-	                int arrayIndex = (i + j * w * 4);
-	                	                
-					int px565 = (((((int) data[arrayIndex + 3] & 0xff) >> 3) << 11) + 
-							((((int) data[arrayIndex + 2] & 0xff) >> 2) << 5) + 
-							(((int) data[arrayIndex + 1] & 0xff) >> 3));
+	                int arrayIndex = (i + j * w);
+	                
+	    			short r = (short)(0xff & (data[arrayIndex] >> 16));
+	    			short gr = (short)(0xff & (data[arrayIndex] >> 8));
+	    			short b = (short)(0xff & (data[arrayIndex] >> 0));
+
+					int px565 = ((((r & 0xff) >> 3) << 11) + 
+							(((gr & 0xff) >> 2) << 5) + 
+							((b & 0xff) >> 3));
 					if ( fixit && px565 == 0xffff ) {
 						bx[0] = (byte) 0xff;
 						bx[1] = (byte) 0xdf;

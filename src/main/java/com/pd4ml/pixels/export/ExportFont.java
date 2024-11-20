@@ -75,7 +75,7 @@ public class ExportFont {
 				charactersToImport = "A-Z a-z . , - + #x0021-#x0024 #00048-#00057";
 			}
 			
-	        generateGlyphImages(charactersToImport, p.fontSize);
+	        generateGlyphImages(charactersToImport, (int)(1.35 * p.fontSize + .5));
 
 		} catch (Exception e) {
 			e.printStackTrace();

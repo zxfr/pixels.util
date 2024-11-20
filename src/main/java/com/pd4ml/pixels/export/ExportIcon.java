@@ -32,14 +32,21 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.image.DataBufferInt;
+import java.awt.image.PixelGrabber;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
 
@@ -70,6 +77,8 @@ public class ExportIcon {
 	private boolean antialiased;
 	
 	Image img;
+	private int scale;
+
 	
 	public ExportIcon(String path, Params p) throws FontFormatException, IOException {
 		
@@ -77,13 +86,25 @@ public class ExportIcon {
 		antialiased = p.antialiased;
 		chosenGlyph = p.glyph;
 		fontSize = p.fontSize;
-		
+		scale = p.scale;
+
+		fontSize = (int)(1.35 * fontSize + .5);
+
 		if (p.glyph != null) {
 			
-			FileInputStream fis = new FileInputStream(path);
-			awtFont = Font.createFont(Font.TRUETYPE_FONT, fis);
-			awtFont.getName();
-			fis.close();
+			try {
+				FileInputStream fis = new FileInputStream(path);
+				awtFont = Font.createFont(Font.TRUETYPE_FONT, fis);
+				awtFont.getName();
+				fis.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (FontFormatException e) {
+				chosenGlyph = null;
+			} catch (IOException e) {
+				chosenGlyph = null;
+				e.printStackTrace();
+			}
 
 			
 		} else {
@@ -106,9 +127,6 @@ public class ExportIcon {
 			return new byte[0];
 		}
 		
-//		int fontSize = 28;
-//		fontSize = (int)(1.35 * fontSize + .5);
-
 		int height;
 		int width;
 		
@@ -199,7 +217,7 @@ public class ExportIcon {
 		actualHeight = height;
 
 
-        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         // Draw the image on to the buffered image
         Graphics2D bGr = bufferedImage.createGraphics();
         bGr.setBackground(Color.white);
@@ -213,64 +231,55 @@ public class ExportIcon {
 	private byte[] extractBytes(BufferedImage bufferedImage, int width, int height, boolean antialiased) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        ColorModel colorModel = bufferedImage.getColorModel();
-        int w = bufferedImage.getWidth();
-        int h = bufferedImage.getHeight();
+		imgWidth = bufferedImage.getWidth();
+		imgHeight = bufferedImage.getHeight();
+
+        int w = imgWidth * scale / 100;
+        int h = imgHeight * scale / 100;
         result = new int[w * h];
 
-        DataBuffer dataBuffer = bufferedImage.getRaster().getDataBuffer();
-        DataBufferByte dataBufferByte = null;
-        if (dataBuffer instanceof DataBufferByte)
-        {
-            dataBufferByte = (DataBufferByte)dataBuffer;
-            byte data[] = dataBufferByte.getData();
-            
-            byte[] bx = new byte[1];
-            for ( int j = 0; j < height; j++  ) {
-            	for ( int i = 0; i < width; i++  ) {
-            		if ( i >= width || j >= height ) {
-            			continue;
-            		}
-            		int arrayIndex = i + j * w;
-            		int colorIndex = data[arrayIndex];
-            		//               int color = indexColorModel.getRGB(colorIndex);
-            		bx[0] = (byte)(0xFF & Math.round(0.2126*colorModel.getRed(colorIndex) + 
-            				0.7152*colorModel.getGreen(colorIndex) + 
-            				0.0722*colorModel.getBlue(colorIndex)));
-            		try {
-            			baos.write(bx);
-            		} catch (IOException e) {
-            			e.printStackTrace();
-            		}
-            	}
-            }
-        }
-        else
-        {
-        	DataBufferInt dataBufferInt = (DataBufferInt)dataBuffer;
-            int data[] = dataBufferInt.getData();
-            
-            byte[] bx = new byte[1];
-            for ( int j = 0; j < height; j++  ) {
-            	for ( int i = 0; i < width; i++  ) {
-            		if ( i >= width || j >= height ) {
-            			continue;
-            		}
-            		int arrayIndex = i + j * w;
-            		int colorIndex = data[arrayIndex];
-            		//               int color = indexColorModel.getRGB(colorIndex);
-            		bx[0] = (byte)(0xFF & Math.round(0.2126*colorModel.getRed(colorIndex) + 
-            				0.7152*colorModel.getGreen(colorIndex) + 
-            				0.0722*colorModel.getBlue(colorIndex)));
-            		try {
-            			baos.write(bx);
-            		} catch (IOException e) {
-            			e.printStackTrace();
-            		}
-            	}
-            }
-        }
+	    ComponentColorModel colorModel = new ComponentColorModel(
+	    		ColorSpace.getInstance(ColorSpace.CS_sRGB), true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+	    WritableRaster raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, w * 4, 4, new int[] {0, 1, 2, 3}, null); // R, G, B, A order
+//	    BufferedImage scaled = new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
+	    BufferedImage scaled = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
 
+	    Graphics2D g = scaled.createGraphics();
+	    try {
+			g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+			g.drawImage(bufferedImage, 0, 0, w, h, 0, 0, imgWidth, imgHeight, null);
+	    }
+	    finally {
+	        g.dispose();
+	    }
+
+		PixelGrabber pg = new PixelGrabber(scaled, 0, 0, w, h, true);
+		try {
+			pg.grabPixels();
+		} catch (InterruptedException e) {
+		    e.printStackTrace();
+		    return null;
+		}
+		
+		int[] data = (int[]) pg.getPixels();
+        
+        byte[] bx = new byte[1];
+        for ( int j = 0; j < h; j++  ) {
+        	for ( int i = 0; i < w; i++  ) {
+         		int arrayIndex = i + j * w;
+        		
+    			short r = (short)(0xff & (data[arrayIndex] >> 16));
+    			short gr = (short)(0xff & (data[arrayIndex] >> 8));
+    			short b = (short)(0xff & (data[arrayIndex] >> 0));
+
+    			bx[0] = (byte)(0xFF & Math.round(0.2126*r +  0.7152*gr + 0.0722*b));
+        		try {
+        			baos.write(bx);
+        		} catch (IOException e) {
+        			e.printStackTrace();
+        		}
+        	}
+        } 
 		
 		byte[] bb = baos.toByteArray();
 		if ( bb == null ) {
